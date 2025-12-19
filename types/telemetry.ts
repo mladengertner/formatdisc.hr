@@ -1,11 +1,11 @@
 
 export interface ChartPoint {
   /** Epoch ms – used as the X‑axis. */
-  ts: number;
+  timestamp: number;
   /** CPU % (0‑100). */
   cpu: number;
   /** Memory GB. */
-  mem: number;
+  memory: number;
 }
 
 export interface TelemetrySnapshot {
@@ -20,7 +20,7 @@ export interface TelemetrySnapshot {
   /** Cumulative lines analysed. */
   linesAnalyzed: number;
   /** Kernel state – mirrors SlavkoKernel v7 terminology. */
-  kernelState: "INITIALIZING" | "STABLE" | "LOADED" | "CRITICAL";
+  kernelState: "INITIALIZING" | "STABLE" | "LOADED" | "CRITICAL" | "DEGRADED";
   /** Rolling history for the chart (last ~30 s). */
   chartHistory: ChartPoint[];
 }

@@ -1,47 +1,45 @@
-# Multi-stage Dockerfile for production deployment
-FROM node:20-alpine AS base
+# --------------------------------------------------------------
+# 1️⃣ Builder – compile TypeScript, Next.js and the CLI
+# --------------------------------------------------------------
+FROM node:20-alpine AS builder
 
-# Install dependencies only when needed
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
+# Install build‑time tools required for native modules (e.g. better‑sqlite3)
+RUN apk add --no-cache python3 make g++ gcc
+
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-RUN npm ci
+# Install dependencies (skip scripts to avoid native‑module compile on the host)
+COPY package*.json ./
+RUN npm ci --ignore-scripts
 
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+# Copy source files
 COPY . .
 
-ENV NEXT_TELEMETRY_DISABLED 1
-
+# Build Next.js, TypeScript and the CLI
 RUN npm run build
 
-# Production image, copy all the files and run next
-FROM base AS runner
+# --------------------------------------------------------------
+# 2️⃣ Runtime – minimal image with only production deps
+# --------------------------------------------------------------
+FROM node:20-alpine AS runtime
+
+ENV NODE_ENV=production
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+# Copy only production dependencies (they were already installed in builder)
+COPY --from=builder /app/package*.json ./
+RUN npm ci --omit=dev --ignore-scripts && \
+    npm rebuild better-sqlite3 --build-from-source
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
+# Copy compiled artifacts
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/bin ./bin
 
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
-
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
+# Ensure the data directory exists (SQLite will create the DB file at runtime)
+RUN mkdir -p data
 
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
-
-CMD ["node", "server.js"]
+CMD ["node", "dist/server.js"]

@@ -1,22 +1,47 @@
-name: CI
+name: CI – Build, Test & Docker
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
+    branches: [main, develop]
 
 jobs:
-  build:
+  build-test:
     runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js (20.x)
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - run: npm ci --legacy-peer-deps
-      - run: npm run lint
-      - run: npm run type-check
-      - run: npm test
-      - run: npm run build
-      - run: docker build -t formatdisc-shell .
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies (skip native scripts)
+        run: npm ci --ignore-scripts
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type‑check
+        run: npm run type-check
+
+      - name: Run unit tests
+        run: npm test -- --runInBand
+
+      - name: Build (Next + CLI)
+        run: npm run build
+
+      - name: Verify Docker build
+        run: |
+          docker build -t enterprise-shell:test .
+          docker run -d -p 3001:3000 enterprise-shell:test
+          # give the container a moment to start
+          sleep 5
+          curl -f http://localhost:3001/healthz
+          docker stop $(docker ps -q --filter ancestor=enterprise-shell:test)

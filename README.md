@@ -1,59 +1,74 @@
-... existing code ...
+# Enterprise Shell v3
 
-## 🚀 **Quick Start**
+A production‑grade, real‑time full‑stack platform built with:
 
-### **Prerequisites**
-- Node.js 18+
-- npm or yarn
-- Git
-- Docker (optional, for local deployment)
-- OpenSSL (for production ENV generation)
+- **Next.js 14** + **React** (Tailwind UI, ARIA, high‑contrast animations)
+- **Express** (API layer, Server‑Sent Events)
+- **SQLite** (audit‑proof score store; optional on Windows)
+- **CLI** (`slavko`) for health checks, status, simulation and Docker helpers
+- **Docker** multi‑stage build
+- **GitHub Actions** CI pipeline
 
-### **Installation**
+## Prerequisites
+
+- **Node ≥ 20** (LTS)
+- **npm ≥ 9**
+- (Optional) `better-sqlite3` native binary – required only for persistence.
+  - On Linux/macOS: `npm i` works out‑of‑the‑box.
+  - On Windows: either install the pre‑built binary  
+    `npm i better-sqlite3@9.0.0 --platform=win32 --arch=x64`  
+    or run with `--ignore-scripts` (the app will operate in‑memory).
+
+## Development
 
 ```bash
-# Clone the repository
-git clone https://github.com/formatdisc/v0-nvidia-playground-monorepo.git
-cd v0-nvidia-playground-monorepo
+# 1️⃣ Clone & install
+git clone <repo‑url>
+cd enterprise-shell
+npm ci               # --ignore-scripts if you hit native‑module errors
 
-# Install dependencies
-npm install
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your credentials
-
-# Run development server
+# 2️⃣ Run the dev server (hot‑reload)
 npm run dev
+# → http://localhost:3000
 ```
 
-### **Production ENV Generation**
-
-Generate secure production environment variables with real secrets:
+## Production (Docker)
 
 ```bash
-# Generate production ENV with OpenSSL
-chmod +x scripts/generate-production-env.sh
-./scripts/generate-production-env.sh
-
-# Edit generated .env.production with real URLs
-nano .env.production
-
-# Add to Vercel
-vercel env add STRIPE_SECRET_KEY production < .env.production
-# ... repeat for all variables
-
-# Deploy to production
-npm run deploy:production
+docker build -t enterprise-shell .
+docker run -d -p 3000:3000 enterprise-shell
 ```
 
-**Security Notes:**
-- Never commit `.env.production` to Git (already in `.gitignore`)
-- Rotate all secrets every 90 days
-- Use 1Password or HashiCorp Vault for team secret sharing
-- Enable 2FA on all service accounts (Supabase, Stripe, Vercel)
+## CLI usage
 
-... existing code ...
+The CLI is compiled to `bin/slavko-shell.js` and exposed via the `slavko` binary.
+
+```bash
+# Show available commands
+npx slavko --help
+
+# Health‑check the running server
+npx slavko doctor
+
+# Print the latest telemetry snapshot
+npx slavko status
+
+# Simulate a custom telemetry state (dev only)
+npx slavko simulate --cpu 85 --latency 22 --state WARN
+
+# Show aggregated KPI summary
+npx slavko metrics
+
+# Build and push a Docker image (local)
+npx slavko deploy --tag myorg/enterprise-shell:latest
 ```
 
-```json file="" isHidden
+## Testing
+
+```bash
+npm test
+```
+
+## License
+
+MIT – feel free to fork, extend, and ship your own version of the Enterprise Shell! 🚀

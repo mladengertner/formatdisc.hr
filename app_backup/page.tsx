@@ -8,7 +8,7 @@ import { MvpSimulatorSection } from "@/components/mvp-simulator-section"
 import { Footer } from "@/components/footer"
 import { LanguageToggle } from "@/components/language-toggle"
 import { Badge } from "@/components/ui/badge"
-import ShellOrchestrator from "@/components/enterprise/shell-orchestrator"
+import ShellOrchestrator from "@/components/enterprise/ShellOrchestrator"
 import { AuditDashboard } from "@/components/audit-dashboard"
 import { ADRDashboard } from "@/components/adr-dashboard"
 

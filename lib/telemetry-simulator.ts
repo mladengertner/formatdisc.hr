@@ -1,86 +1,110 @@
 import { TelemetrySnapshot, ChartPoint } from "@/types/telemetry";
 
-/**
- * Simple random‑walk generator that mimics a live system.
- * Keeps a history buffer.
- */
+// In a real V2 implementation, we might import recordScore to auto-persist periodic snapshots,
+// but for the V2 spec provided, the simulation is primarily consumed by runFusion via getSnapshot().
+// The provided spec code for services/telemetrySimulator.ts says: "emitira TelemetrySnapshot. Na kraju svakog tick‑a poziva persistSnapshot iz slavko-score."
+// However, the `slavko-score` spec only exports `recordScore` which takes Fusion Req/Res.
+// So we will stick to the logic of managing the state that Fusion consumes.
+
 class TelemetryStore {
     private snapshot: TelemetrySnapshot;
-    private history: ChartPoint[] = [];
+    private history: ChartPoint[];
+    private maxHistory = 30; // 30 seconds rolling buffer as per spec
 
     constructor() {
-        this.snapshot = this.initialSnapshot();
-        // Prime the buffer
-        for (let i = 0; i < 12; i++) this.tick();
-    }
-
-    private initialSnapshot(): TelemetrySnapshot {
-        return {
-            cpuUsage: 5,
-            memoryUsage: 2,
-            synapticThroughput: 0,
-            subDermalLatency: 12,
+        this.history = [];
+        this.snapshot = {
+            cpuUsage: 10,
+            memoryUsage: 1.2,
+            synapticThroughput: 120,
+            subDermalLatency: 5,
+            kernelState: "STABLE",
             linesAnalyzed: 0,
-            kernelState: "INITIALIZING",
             chartHistory: [],
         };
+
+        // Initialize history
+        const now = Date.now();
+        for (let i = 0; i < this.maxHistory; i++) {
+            this.history.push({
+                timestamp: now - (this.maxHistory - i) * 1000,
+                cpu: 10,
+                memory: 1.2,
+            });
+        }
+        this.snapshot.chartHistory = this.history;
     }
 
-    /** Advance the simulation by one step. */
+    // 2 Hz simulation step - usually called by an interval or on-read
     tick() {
-        const now = Date.now();
+        // Random walk logic
+        const last = this.snapshot;
 
-        // Random walk helpers
-        const walk = (value: number, step: number, min = 0, max = 100) => {
-            const delta = (Math.random() - 0.5) * step * 2;
-            const next = Math.min(max, Math.max(min, value + delta));
-            return Number(next.toFixed(2));
-        };
+        // CPU: Drift +/- 5%, clamp 0-100
+        const cpuDrift = (Math.random() - 0.5) * 10;
+        let newCpu = last.cpuUsage + cpuDrift;
+        newCpu = Math.max(2, Math.min(newCpu, 100));
 
-        // Update each metric
-        const cpu = walk(this.snapshot.cpuUsage, 2, 0, 100);
-        const mem = walk(this.snapshot.memoryUsage, 0.5, 1, 32);
-        // Throughput can jump
-        const syn = Math.max(0, this.snapshot.synapticThroughput + (Math.random() - 0.5) * 50);
-        const latency = Math.max(5, this.snapshot.subDermalLatency + (Math.random() - 0.5) * 2);
-        const lines = this.snapshot.linesAnalyzed + Math.floor(Math.random() * 15);
+        // Memory: Drift +/- 0.1, clamp 0.5 - 16
+        const memDrift = (Math.random() - 0.5) * 0.2;
+        let newMem = last.memoryUsage + memDrift;
+        newMem = Math.max(0.5, Math.min(newMem, 16));
 
-        // Kernel state logic
+        // Calculate derived metrics
+        // Latency inversely prop to CPU (load increases latency) + noise
+        let lat = 5 + (newCpu / 3) + (Math.random() * 5);
+
+        // Throughput proportional to CPU up to a point, then drops
+        let tps = 100 + (newCpu * 5) - (Math.max(0, newCpu - 80) * 10);
+
+        // Kernel State Logic
         let state: TelemetrySnapshot["kernelState"] = "STABLE";
-        if (cpu > 85 || latency > 50) state = "CRITICAL";
-        else if (lines < 100) state = "INITIALIZING";
+        if (newCpu > 90 || lat > 50) state = "CRITICAL";
+        else if (newCpu > 70 || lat > 20) state = "DEGRADED";
 
         this.snapshot = {
-            cpuUsage: cpu,
-            memoryUsage: mem,
-            synapticThroughput: Number(syn.toFixed(2)),
-            subDermalLatency: Number(latency.toFixed(2)),
-            linesAnalyzed: lines,
+            cpuUsage: Number(newCpu.toFixed(2)),
+            memoryUsage: Number(newMem.toFixed(2)),
+            subDermalLatency: Number(lat.toFixed(2)),
+            synapticThroughput: Number(tps.toFixed(2)),
             kernelState: state,
-            chartHistory: [], // filled below
+            linesAnalyzed: last.linesAnalyzed + Math.floor(Math.random() * 5),
+            chartHistory: this.history
         };
 
-        this.history.push({ ts: now, cpu, mem });
-        // Keep last 30s
-        const cutoff = now - 30_000;
-        this.history = this.history.filter((p) => p.ts >= cutoff);
-        this.snapshot.chartHistory = [...this.history];
+        // Update history
+        this.history.push({
+            timestamp: Date.now(),
+            cpu: this.snapshot.cpuUsage,
+            memory: this.snapshot.memoryUsage
+        });
+
+        if (this.history.length > this.maxHistory) {
+            this.history.shift();
+        }
     }
 
     getSnapshot(): TelemetrySnapshot {
-        // Tick on read to simulate constant activity even in serverless
         this.tick();
         return JSON.parse(JSON.stringify(this.snapshot));
     }
 }
 
-// Global instance to maintain state across requests in warm envs
-// In purely ephemeral serverless, this resets, but tick() primes it, so it's fine for demo.
-const globalForTelemetry = global as unknown as { telemetryStore: TelemetryStore };
+export const telemetryStore = new TelemetryStore();
 
-export const telemetryStore =
-    globalForTelemetry.telemetryStore || new TelemetryStore();
+export function startTelemetrySimulator() {
+    // In a serverless context (Next.js API), we can't easily keep a persistent interval running 
+    // across requests unless we use a custom server or global singleton.
+    // Since `telemetryStore` is a global singleton module, it persists somewhat in hot lambda containers.
+    // The `tick()` in `getSnapshot()` ensures data moves forward on every request.
+    // For a real background worker, we'd need an external process.
+    // Ideally, we'd enable an interval here if we had a long-running server.
+    setInterval(() => {
+        telemetryStore.tick();
+    }, 500); // 2 Hz
+}
 
-if (process.env.NODE_ENV !== "production") {
-    globalForTelemetry.telemetryStore = telemetryStore;
+// Start simulation if this module is loaded in a long-lived process
+if (process.env.NODE_ENV !== 'test') {
+    startTelemetrySimulator();
 }
