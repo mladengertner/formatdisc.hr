@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Rocket, Sparkles } from "lucide-react"
@@ -18,6 +18,17 @@ export function MvpSimulatorSection() {
   const [isRunning, setIsRunning] = useState(false)
   const [phases, setPhases] = useState<Phase[] | null>(null)
   const [summary, setSummary] = useState<string | null>(null)
+  const [particles, setParticles] = useState<{ left: string; top: string; delay: string; duration: string }[]>([])
+
+  useEffect(() => {
+    const newParticles = [...Array(20)].map(() => ({
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      delay: `${Math.random() * 2}s`,
+      duration: `${2 + Math.random() * 3}s`,
+    }))
+    setParticles(newParticles)
+  }, [])
 
   async function runSimulation() {
     if (!ideaType || keyFeatures.trim().length < 20) return
@@ -55,15 +66,15 @@ export function MvpSimulatorSection() {
 
       {/* Floating particles effect */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(20)].map((_, i) => (
+        {particles.map((p, i) => (
           <div
             key={i}
             className="absolute w-2 h-2 bg-primary/20 rounded-full animate-pulse"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 2}s`,
-              animationDuration: `${2 + Math.random() * 3}s`,
+              left: p.left,
+              top: p.top,
+              animationDelay: p.delay,
+              animationDuration: p.duration,
             }}
           />
         ))}
