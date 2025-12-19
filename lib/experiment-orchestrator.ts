@@ -19,8 +19,8 @@ const stepHandlers: Record<string, StepHandler> = {
     const output: any = {}
 
     if (mapping) {
-      Object.entries(mapping as Record<string, string>).forEach(([from, to]) => {
-        output[to] = input?.[from]
+      Object.entries(mapping).forEach(([from, to]) => {
+        output[to as string] = input?.[from as string]
       })
     }
 

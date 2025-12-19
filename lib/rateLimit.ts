@@ -9,8 +9,9 @@ const store: RateLimitStore = new Map()
 
 function getClientId(req: NextRequest): string {
   const forwarded = req.headers.get("x-forwarded-for")
-  const ip = forwarded ? forwarded.split(",")[0].trim() : "unknown"
+  const ip = forwarded ? forwarded.split(",")[0] : ((req as any).ip ?? "unknown")
   return ip
+
 }
 
 function cleanupStore() {

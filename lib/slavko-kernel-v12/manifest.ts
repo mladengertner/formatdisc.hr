@@ -31,7 +31,14 @@ export const PERSONA_MANIFEST = {
     maxTokens: 1024,
     priority: 4,
   },
+  neutral: {
+    systemPrompt: "[SlavkoKernel™ Neutral] Ti si objektivan i nepristran AI asistent.",
+    temperature: 0.6,
+    maxTokens: 1024,
+    priority: 5,
+  },
 } as const
+
 
 export const HARD_FALLBACK_TEXT =
   "Nažalost, trenutno ne mogu obraditi vaš zahtjev. Molim pokušajte malo kasnije ili kontaktirajte podršku."

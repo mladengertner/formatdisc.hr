@@ -1,5 +1,5 @@
 import type { ExperimentDefinition, ExperimentStep, ExperimentLog, SlavkoCouncilResponse } from "@/lib/types/experiment"
-import { SlavkoKernel, type KernelInput } from "@/lib/slavko-kernel-v12"
+import { SlavkoKernel, type KernelInput } from "@/lib/slavko-kernel-v12/kernel"
 
 type StepExecutionContext = {
   prevOutput: any

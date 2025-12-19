@@ -1,14 +1,31 @@
-import Stripe from "stripe";
+import "server-only"
 
-// Use environment variable or fallback to a placeholder for build stability
-// In production, strictly require the env var
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "sk_test_placeholder_key_12345";
+import Stripe from "stripe"
 
-export const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: "2024-11-20.acacia", // Use latest API version or pin to a known stable one
-  typescript: true,
-});
-
-export function isStripeConfigured() {
-  return process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.startsWith("sk_");
+// Use globalThis to ensure single instance of Stripe client
+const globalForStripe = globalThis as unknown as {
+  stripeClient: Stripe | undefined
 }
+
+export function getStripe() {
+  // Return existing global instance if available
+  if (globalForStripe.stripeClient) {
+    return globalForStripe.stripeClient
+  }
+
+  if (!process.env.STRIPE_SECRET_KEY) {
+    console.error("[v0] Stripe secret key not configured")
+    return null
+  }
+
+  // Create new instance only once
+  const client = new Stripe(process.env.STRIPE_SECRET_KEY)
+
+  // Store in global to prevent duplicate instances
+  globalForStripe.stripeClient = client
+
+  return client
+}
+
+// Export singleton for direct import
+export const stripe = getStripe()

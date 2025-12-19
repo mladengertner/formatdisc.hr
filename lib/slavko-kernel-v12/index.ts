@@ -21,10 +21,10 @@ export class SlavkoKernel {
 
   static async execute(input: KernelInput, config?: Partial<KernelConfig>): Promise<KernelOutput> {
     const kernel = new SlavkoKernel(config)
-    return kernel.execute(input)
+    return kernel.run(input)
   }
 
-  public async execute(input: KernelInput): Promise<KernelOutput> {
+  private async run(input: KernelInput): Promise<KernelOutput> {
     const startTime = Date.now()
     let fallbackUsed = false
     let text = ""
@@ -44,7 +44,6 @@ export class SlavkoKernel {
       // Graceful degradation
       console.error("[SlavkoKernel v12] Execution error:", error)
       text = HARD_FALLBACK_TEXT
-      route = "fallback"
       fallbackUsed = true
     }
 
