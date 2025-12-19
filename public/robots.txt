@@ -1,0 +1,19 @@
+# FormatDisc - Enterprise SaaS Platform
+# https://www.formatdisc.hr
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /dashboard/
+Disallow: /billing/
+Disallow: /admin/
+
+# Sitemap
+Sitemap: https://www.formatdisc.hr/sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
+
+# Host directive
+Host: https://www.formatdisc.hr
