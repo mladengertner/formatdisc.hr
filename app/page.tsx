@@ -5,6 +5,7 @@ import { PricingSection } from "@/components/pricing-section"
 import { SaasOrderSection } from "@/components/saas-order-section"
 import { MvpSimulatorSection } from "@/components/mvp-simulator-section"
 import { Footer } from "@/components/footer"
+import { GovernanceScorecard } from "@/components/governance-scorecard"
 import { LanguageToggle } from "@/components/language-toggle"
 import { KernelMetricsCard } from "@/components/kernel-metrics-card"
 
@@ -18,6 +19,10 @@ export default function HomePage() {
       <main id="main-content" tabIndex={-1} className="min-h-screen bg-background focus:outline-none">
         {/* Entity Introduction Zone: Hero + Capability Proof (unified) */}
         <HeroSection />
+
+        <div className="container mx-auto px-4 -mt-12 relative z-10">
+          <GovernanceScorecard />
+        </div>
 
         {/* Interactive MVP Simulator - the "wow" moment */}
         <MvpSimulatorSection />
