@@ -147,9 +147,8 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://vercel.live" />
-        <link rel="dns-prefetch" href="//api.formatdisc.hr" />
-        <link rel="dns-prefetch" href="//cdn.formatdisc.hr" />
+        <link rel="dns-prefetch" href="https://api.formatdisc.hr" />
+        <link rel="dns-prefetch" href="https://cdn.formatdisc.hr" />
 
         <link rel="alternate" hrefLang="hr-HR" href="https://www.formatdisc.hr/" />
         <link rel="alternate" hrefLang="hr" href="https://www.formatdisc.hr/" />
