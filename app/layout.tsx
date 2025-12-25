@@ -1,12 +1,8 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { SkipLink } from "@/components/skip-link"
 import "./globals.css"
-
-const _geist = Geist({ subsets: ["latin", "latin-ext"] })
-const _geistMono = Geist_Mono({ subsets: ["latin", "latin-ext"] })
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -145,8 +141,6 @@ export default function RootLayout({
   return (
     <html lang="hr" className="dark">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://api.formatdisc.hr" />
         <link rel="dns-prefetch" href="https://cdn.formatdisc.hr" />
 
